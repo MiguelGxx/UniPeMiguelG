@@ -3,16 +3,16 @@ header("Access-Control-Allow-Origin: *");
 header("Content-Type: application/json");
 
 $apiKeys = [
-    "AIzaSyCipn5CO3HqdOOHvwzIqLCxphYmUsuNoek",
-    "AIzaSyB0zVWfh990cEIN8DGQUxshy8upVdgtPNI",
-    "AIzaSyB4T5S4jhx1j2kO5e6XJahCLKuEA_H2oiY",
-    "AIzaSyDLPFn-6r8ZVT9gnO6xEKF82TWtcgOLWzE"
+    "Ponerapiaqui1",
+    "Ponerapiaqui2",
+    "Ponerapiaqui3",
+    "Ponerapiaqui4"
 ];
 
 function validarApiKey($apiKey) {
     $url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro-latest:generateContent?key=" . $apiKey;
     $data = json_encode(["contents" => [["parts" => [["text" => "Hola"]]]]]);
-    
+
     $options = [
         "http" => [
             "header"  => "Content-Type: application/json\r\n",
@@ -23,12 +23,18 @@ function validarApiKey($apiKey) {
 
     $context = stream_context_create($options);
     $response = @file_get_contents($url, false, $context);
-    
-    return $response !== false;
+
+    if ($response === false) {
+        return false;
+    }
+
+    $jsonResponse = json_decode($response, true);
+    return isset($jsonResponse["candidates"]);  // Si hay candidatos, la API Key es válida
 }
 
 function obtenerApiKeyValida() {
     global $apiKeys;
+
     foreach ($apiKeys as $key) {
         if (validarApiKey($key)) {
             return $key;
@@ -1579,9 +1585,15 @@ competente.: " . $pregunta;
     $response = @file_get_contents($url, false, $context);
 
     if ($response === false) {
-        echo json_encode(["error" => "Compa, hubo un error al obtener la respuesta."]);
+        echo json_encode(["error" => "Compa, hubo un error al obtener la respuesta.", "detalle" => error_get_last()]);
     } else {
         $responseData = json_decode($response, true);
-        echo json_encode(["respuesta" => $responseData["candidates"][0]["content"]["parts"][0]["text"] ?? "No se pudo obtener respuesta."]);
+
+        if (isset($responseData["candidates"][0]["content"]["parts"][0]["text"])) {
+            echo json_encode(["respuesta" => $responseData["candidates"][0]["content"]["parts"][0]["text"]]);
+        } else {
+            echo json_encode(["error" => "No se pudo obtener respuesta de la API."]);
+        }
     }
 }
+?>
